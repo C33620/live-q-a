@@ -53,6 +53,11 @@ def load_env():
 load_env()
 
 app.secret_key = os.environ["FLASK_SECRET_KEY"]
+app.config.update(
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax"
+)
 PRESENTER_PASSWORD = os.environ["PRESENTER_PASSWORD"]
 
 limiter = Limiter(
