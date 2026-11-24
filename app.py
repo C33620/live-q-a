@@ -550,6 +550,9 @@ def submit_question():
     if language not in ("en", "ja"):
         return '<p role="alert">Please select a valid language.</p>', 400
 
+    if ui_language not in ("en", "ja"):
+       ui_language = "en"
+
     # Check whether the written language matches the selection.
     detected_language = detect_language(question)
 
@@ -624,6 +627,16 @@ def submit_question():
             '<p role="alert">Unable to submit your question. Please try again.</p>',
             502
         )
+
+    except Exception:
+        app.logger.exception(
+        "Unexpected error while submitting a question"
+        )
+
+        return (
+          '<p role="alert">Something went wrong. Please try again.</p>',
+         500
+        )    
 
 
 # --------------------------------------------------
