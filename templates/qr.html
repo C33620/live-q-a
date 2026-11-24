@@ -142,7 +142,7 @@
         const qrError = document.getElementById("qr-error");
 
         // Use the same host and port as the current presentation screen.
-        const participantUrl = window.location.origin + "/";
+        const participantUrl = window.location.origin + "/join";
 
         if (typeof QRCode === "undefined") {
           qrError.style.display = "block";

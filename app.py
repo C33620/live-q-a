@@ -395,6 +395,11 @@ def like_question():
 
 @app.route("/")
 def home():
+    return redirect("/presentation")
+
+
+@app.route("/join")
+def join():
     return render_template("index.html")
 
 # --------------------------------------------------
