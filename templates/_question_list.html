@@ -1,0 +1,25 @@
+{% set visible_questions = questions | selectattr("translation_status",
+"equalto", "completed") | selectattr("translated_text") | list %} {% if
+visible_questions %} {% for question in visible_questions %}
+<article>
+  <div
+    style="
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+    "
+  >
+    <h3>{{ question.original_text }}</h3>
+    <span style="white-space: nowrap; font-weight: bold">
+      ♥ {{ question.like_count }}
+    </span>
+  </div>
+
+  <p>{{ question.translated_text }}</p>
+</article>
+{% endfor %} {% else %}
+<article>
+  <p>No questions available yet.</p>
+</article>
+{% endif %}

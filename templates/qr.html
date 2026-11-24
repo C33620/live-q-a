@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Live Q&A — Join</title>
+
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"
+    />
+
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1rem;
+        text-align: center;
+      }
+
+      .welcome-container {
+        width: 100%;
+        max-width: 650px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+      }
+
+      .welcome-container h1 {
+        font-size: clamp(2rem, 5vw, 3rem);
+        margin-bottom: 0;
+      }
+
+      .welcome-container .subtitle {
+        color: var(--pico-muted-color);
+        font-size: 1.15rem;
+        margin: 0;
+      }
+
+      #qr-code-container {
+        background: white;
+        padding: 1.25rem;
+        border-radius: 1.25rem;
+        border: 1px solid var(--pico-muted-border-color);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+      }
+
+      #qr-code {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 250px;
+        min-height: 250px;
+      }
+
+      #qr-code img {
+        display: block;
+        width: 250px;
+        height: 250px;
+      }
+
+      #qr-error {
+        color: var(--pico-del-color);
+        display: none;
+      }
+
+      .instructions {
+        color: var(--pico-muted-color);
+        font-size: 0.95rem;
+        margin: 0;
+      }
+
+      #view-questions {
+        width: 100%;
+        max-width: 320px;
+        margin: 0;
+      }
+
+      @media (max-width: 600px) {
+        .welcome-container {
+          gap: 1.25rem;
+        }
+
+        #qr-code {
+          min-width: 220px;
+          min-height: 220px;
+        }
+
+        #qr-code img {
+          width: 220px;
+          height: 220px;
+        }
+
+        #qr-code-container {
+          padding: 1rem;
+        }
+
+        .welcome-container .subtitle {
+          font-size: 1rem;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <main class="welcome-container">
+      <h1>Live Q&A</h1>
+
+      <p class="subtitle">Join the conversation and submit your questions.</p>
+
+      <div id="qr-code-container">
+        <div id="qr-code"></div>
+      </div>
+
+      <p class="instructions">
+        Scan this QR code with your phone to submit a question.
+      </p>
+
+      <p id="qr-error" role="alert">
+        Unable to generate the QR code. Please refresh the page.
+      </p>
+
+      <a href="/presentation/live" role="button" id="view-questions">
+        View submitted questions
+      </a>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const qrContainer = document.getElementById("qr-code");
+        const qrError = document.getElementById("qr-error");
+
+        // Use the same host and port as the current presentation screen.
+        const participantUrl = window.location.origin + "/";
+
+        if (typeof QRCode === "undefined") {
+          qrError.style.display = "block";
+          return;
+        }
+
+        new QRCode(qrContainer, {
+          text: participantUrl,
+          width: 250,
+          height: 250,
+          colorDark: "#17212b",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.H,
+        });
+      });
+    </script>
+  </body>
+</html>

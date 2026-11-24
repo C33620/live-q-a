@@ -1,0 +1,867 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+
+    <title>Live Q&A</title>
+
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"
+    />
+
+    <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
+
+    <style>
+      /* Fixed Live Q&A header */
+      nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        width: 100%;
+        padding: 0.75rem max(1rem, calc((100vw - 1200px) / 2));
+        margin: 0;
+        background: var(--pico-background-color);
+        border-bottom: 1px solid var(--pico-muted-border-color);
+      }
+
+      /* Leave room for the fixed header */
+      main.container {
+        padding-top: 7.5rem;
+        padding-bottom: 12rem;
+      }
+
+      /* WhatsApp-inspired question composer */
+      #question-form {
+        position: static;
+        display: flex;
+        flex-direction: row;
+        align-items: flex-end;
+        gap: 0.5rem;
+        background: var(--pico-card-background-color, #f3f4f6);
+        border: 1px solid var(--pico-muted-border-color);
+        border-radius: 1.25rem;
+        padding: 0.85rem;
+        margin-bottom: 1rem;
+      }
+
+      #question-form textarea {
+        flex: 1;
+        min-width: 0;
+        margin: 0;
+        min-height: 60px;
+        resize: vertical;
+        border-radius: 1rem;
+        background: var(--pico-background-color);
+        box-shadow: none;
+      }
+
+      #question-form textarea:focus {
+        box-shadow: none;
+      }
+      #submit-button {
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 56px;
+        height: 56px;
+        min-width: 56px;
+        margin: 0;
+        padding: 0;
+        border-radius: 50%;
+      }
+
+      #submit-button svg {
+        width: 24px;
+        height: 24px;
+        flex-shrink: 0;
+      }
+
+      /* Fixed bottom question composer */
+      #composer-container {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 100;
+
+        padding: 0 0 calc(0.75rem + env(safe-area-inset-bottom));
+
+        background: var(--pico-background-color);
+
+        border: 1px solid var(--pico-muted-border-color);
+        border-top: none;
+        border-bottom: none;
+      }
+
+      /* Confirmation appears above the question box */
+      #response {
+        position: fixed;
+        left: 1rem;
+        right: 1rem;
+        bottom: calc(9rem + env(safe-area-inset-bottom));
+        z-index: 101;
+        display: flex;
+        justify-content: center;
+        pointer-events: none;
+      }
+
+      #response > * {
+        pointer-events: auto;
+      }
+
+      /* Remove unnecessary space below the form */
+      #question-form {
+        margin-bottom: 0;
+      }
+
+      /* Newest / Popular tabs */
+      #sort-tabs {
+        position: static;
+        display: flex;
+        gap: 0;
+
+        width: 100%;
+        margin: 0;
+        padding: 0 max(1rem, calc((100vw - 1200px) / 2));
+
+        background: var(--pico-background-color);
+        outline: none !important;
+        box-shadow: none !important;
+      }
+
+      /* Prevent parent container from changing color on interaction */
+      #composer-container,
+      #composer-container:focus,
+      #composer-container:focus-within,
+      #composer-container:active {
+        background: var(--pico-background-color) !important;
+        background-color: var(--pico-background-color) !important;
+        border-color: var(--pico-muted-border-color) !important;
+        outline: none !important;
+        box-shadow: none !important;
+      }
+
+      #sort-tabs button {
+        appearance: none;
+        -webkit-appearance: none;
+
+        flex: 1;
+        width: 50%;
+
+        margin: 0;
+        padding: 0.75rem 0.15rem;
+
+        background: none !important;
+
+        border: none !important;
+        border-top: 3px solid var(--pico-muted-border-color) !important;
+
+        border-radius: 0 !important;
+        box-shadow: none !important;
+
+        color: var(--pico-muted-color);
+        font-weight: 400;
+        text-align: center;
+      }
+
+      /* Active tab: blue top border */
+      #sort-tabs button[aria-pressed="true"] {
+        border-top: 3px solid var(--pico-primary) !important;
+        color: var(--pico-primary) !important;
+        font-weight: 600;
+      }
+
+      /* Remove focus highlights */
+      #sort-tabs button:focus,
+      #sort-tabs button:focus-visible,
+      #sort-tabs button:active {
+        outline: none !important;
+        box-shadow: none !important;
+      }
+
+      @media (max-width: 600px) {
+        main.container {
+          padding-top: 7.5rem;
+        }
+
+        #question-form {
+          padding: 0.7rem;
+        }
+
+        #question-form textarea {
+          min-height: 90px;
+        }
+
+        #submit-button {
+          padding: 0.65rem 1.1rem;
+        }
+
+        /* Mobile language reconciliation pill */
+        #language-confirmation {
+          width: 100%;
+          padding: 1rem 1.3rem;
+          border-radius: 1.25rem;
+          display: flex;
+          flex-direction: column;
+          align-items: stretch;
+          gap: 0.75rem;
+        }
+
+        #language-confirmation .confirmation-text {
+          width: 100%;
+          padding: 0 0.2rem;
+          gap: 0.25rem;
+          text-align: center;
+          align-items: center;
+        }
+
+        #language-confirmation .confirmation-text p:first-child {
+          font-size: 0.78rem;
+          line-height: 1.4;
+        }
+
+        #language-confirmation .confirmation-text p:last-child {
+          font-size: 0.7rem;
+          line-height: 1.4;
+        }
+
+        #language-confirmation .confirmation-buttons {
+          display: flex;
+          justify-content: flex-end;
+          gap: 0.5rem;
+        }
+
+        #language-confirmation button {
+          padding: 0.5rem 0.85rem;
+          font-size: 0.75rem;
+        }
+      }
+
+      /* Floating language confirmation pill */
+      #language-confirmation {
+        width: 100%;
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 0.75rem 1.1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        background: var(--pico-card-background-color);
+        border: 1px solid var(--pico-muted-border-color);
+        border-radius: 999px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+        text-align: left;
+      }
+
+      #language-confirmation .confirmation-text {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        min-width: 0;
+      }
+
+      #language-confirmation .confirmation-text p {
+        margin: 0;
+        line-height: 1.4;
+      }
+
+      #language-confirmation .confirmation-text p:first-child {
+        font-size: 0.9rem;
+        font-weight: 600;
+      }
+
+      #language-confirmation .confirmation-text p:last-child {
+        font-size: 0.8rem;
+        color: var(--pico-muted-color);
+      }
+
+      #language-confirmation button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+        margin: 0;
+        padding: 0.45rem 0.85rem;
+        font-size: 0.85rem;
+        border-radius: 999px;
+      }
+
+      #submission-confirmation {
+        width: 100%;
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 0.85rem 1.2rem;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        background: var(--pico-card-background-color);
+        border: 1px solid var(--pico-muted-border-color);
+        border-radius: 999px;
+
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+
+        text-align: center;
+        font-size: 0.9rem;
+        font-weight: 600;
+      }
+
+      /* Language selector */
+      #english-button,
+      #japanese-button {
+        background: transparent !important;
+        color: var(--pico-muted-color) !important;
+        border: 1px solid transparent !important;
+        box-shadow: none !important;
+        transition: all 0.2s ease;
+      }
+
+      /* Selected language */
+      #english-button[aria-pressed="true"],
+      #japanese-button[aria-pressed="true"] {
+        background: #e8eef5 !important;
+        color: #40546b !important;
+        border: 1px solid #d5dfea !important;
+        font-weight: 600;
+      }
+
+      /* Remove blue focus highlight */
+      #english-button:focus,
+      #japanese-button:focus,
+      #english-button:focus-visible,
+      #japanese-button:focus-visible {
+        box-shadow: none !important;
+        outline: none !important;
+      }
+    </style>
+  </head>
+
+  <body>
+    <main class="container">
+      <nav>
+        <strong id="title">Live Q&A</strong>
+
+        <div>
+          <button
+            type="button"
+            id="english-button"
+            class="outline"
+            aria-pressed="false"
+            onclick="changeLanguage('en')"
+          >
+            EN
+          </button>
+
+          <button
+            type="button"
+            id="japanese-button"
+            class="outline"
+            aria-pressed="false"
+            onclick="changeLanguage('ja')"
+          >
+            日本語
+          </button>
+        </div>
+      </nav>
+
+      <!-- Question composer -->
+      <div id="response" aria-live="polite"></div>
+      <div id="composer-container">
+        <div id="sort-tabs" role="group" aria-label="Question sorting">
+          <button
+            type="button"
+            id="newest-button"
+            aria-pressed="true"
+            onclick="changeSort('newest')"
+          >
+            Newest
+          </button>
+
+          <button
+            type="button"
+            id="popular-button"
+            aria-pressed="false"
+            onclick="changeSort('popular')"
+          >
+            Popular
+          </button>
+        </div>
+        <form
+          id="question-form"
+          hx-post="/submit-question"
+          hx-target="#response"
+          hx-swap="innerHTML"
+          hx-on::after-request="
+      if(event.detail.successful && event.detail.xhr.getResponseHeader('X-Submission-Saved') === 'true') {
+        this.reset();
+        showSubmissionConfirmation();
+      }
+    "
+          hx-disabled-elt="find button[type='submit']"
+        >
+          <!-- Keep both existing hidden inputs here -->
+
+          <input
+            type="hidden"
+            id="question-language"
+            name="language"
+            value="en"
+          />
+
+          <input
+            type="hidden"
+            id="interface-language"
+            name="ui_language"
+            value="en"
+          />
+
+          <textarea
+            id="question"
+            name="question"
+            placeholder="Write your question here..."
+            maxlength="2000"
+            required
+          ></textarea>
+
+          <button id="submit-button" type="submit" aria-label="Send question">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M22 2 11 13"></path>
+              <path d="m22 2-7 20-4-9-9-4Z"></path>
+            </svg>
+          </button>
+        </form>
+      </div>
+
+      <!-- Participant questions -->
+      <section id="questions-section">
+        <h2 id="questions-title">Questions from the audience</h2>
+
+        <p id="questions-description">
+          See what others are asking and vote for questions you'd like answered.
+        </p>
+
+        <p id="feed-status" role="status" aria-live="polite">
+          Loading questions...
+        </p>
+
+        <div id="questions-list"></div>
+      </section>
+    </main>
+
+    <script>
+      // --------------------------------------------------
+      // Language
+      // --------------------------------------------------
+
+      const translations = {
+        en: {
+          title: "Live Q&A",
+          placeholder: "Write your question here...",
+          submit: "Send question",
+
+          questionsTitle: "Questions from the audience",
+          questionsDescription:
+            "See what others are asking and vote for questions you'd like answered.",
+
+          popular: "Popular",
+          newest: "Newest",
+
+          loading: "Loading questions...",
+          empty: "No questions yet. Be the first to ask!",
+          loadError: "Unable to load questions. Retrying...",
+          likes: "likes",
+          like: "Like",
+          liked: "Liked",
+          noQuestions: "No questions available.",
+
+          // Language confirmation
+          languageWarningTitle: "Your question appears to be in Japanese.",
+          languageWarningDescription:
+            "Please select the language you actually used.",
+        },
+
+        ja: {
+          title: "ライブQ&A",
+          placeholder: "ここに質問を入力してください...",
+          submit: "質問を送信",
+
+          questionsTitle: "参加者からの質問",
+          questionsDescription:
+            "他の参加者の質問を見て、回答してほしい質問に投票しましょう。",
+
+          popular: "人気順",
+          newest: "新着順",
+
+          loading: "質問を読み込み中...",
+          empty: "まだ質問はありません。最初の質問を投稿しましょう！",
+          loadError: "質問を読み込めません。再試行しています...",
+          likes: "いいね",
+          like: "いいね",
+          liked: "いいね済み",
+          noQuestions: "質問はありません。",
+
+          // Language confirmation
+          languageWarningTitle: "質問が日本語で入力されているようです。",
+          languageWarningDescription: "実際に使用した言語を選択してください。",
+        },
+      };
+
+      let currentLanguage = "en";
+      let currentSort = "newest";
+
+      function updateLanguageConfirmation() {
+        const confirmation = document.getElementById("language-confirmation");
+
+        if (!confirmation) return;
+
+        const text = translations[currentLanguage];
+
+        confirmation.querySelector(
+          '[data-i18n="languageWarningTitle"]',
+        ).textContent = text.languageWarningTitle;
+
+        confirmation.querySelector(
+          '[data-i18n="languageWarningDescription"]',
+        ).textContent = text.languageWarningDescription;
+      }
+
+      document.body.addEventListener("htmx:afterSwap", (event) => {
+        if (event.detail.target.id === "response") {
+          updateLanguageConfirmation();
+        }
+      });
+
+      // --------------------------------------------------
+      // Anonymous participant ID
+      // --------------------------------------------------
+
+      function getParticipantId() {
+        const storageKey = "live_qna_participant_id";
+
+        let participantId = localStorage.getItem(storageKey);
+
+        if (!participantId) {
+          if (typeof crypto.randomUUID === "function") {
+            participantId = crypto.randomUUID();
+          } else {
+            participantId =
+              Date.now().toString(36) +
+              "-" +
+              Math.random().toString(36).substring(2) +
+              Math.random().toString(36).substring(2);
+          }
+
+          localStorage.setItem(storageKey, participantId);
+        }
+
+        return participantId;
+      }
+
+      const participantId = getParticipantId();
+
+      // --------------------------------------------------
+      // Language confirmation
+      // --------------------------------------------------
+
+      function confirmQuestionLanguage(language) {
+        document.getElementById("question-language").value = language;
+
+        document.getElementById("question-form").requestSubmit();
+      }
+
+      // --------------------------------------------------
+      // Question success timeout
+      // --------------------------------------------------
+
+      let responseTimeout;
+
+      function showSubmissionConfirmation() {
+        const response = document.getElementById("response");
+
+        clearTimeout(responseTimeout);
+
+        responseTimeout = setTimeout(() => {
+          response.style.transition = "opacity 0.4s ease";
+          response.style.opacity = "0";
+
+          setTimeout(() => {
+            response.innerHTML = "";
+            response.style.opacity = "1";
+            response.style.transition = "";
+          }, 400);
+        }, 3000);
+      }
+
+      // --------------------------------------------------
+      // Change interface language
+      // --------------------------------------------------
+
+      function changeLanguage(language) {
+        currentLanguage = language;
+
+        // Keep both language fields synchronised.
+        document.getElementById("interface-language").value = language;
+        document.getElementById("question-language").value = language;
+
+        const text = translations[language];
+
+        document.documentElement.lang = language;
+
+        document.getElementById("title").textContent = text.title;
+
+        document.getElementById("question").placeholder = text.placeholder;
+
+        document.getElementById("questions-title").textContent =
+          text.questionsTitle;
+
+        document.getElementById("questions-description").textContent =
+          text.questionsDescription;
+
+        document.getElementById("popular-button").textContent = text.popular;
+
+        document.getElementById("newest-button").textContent = text.newest;
+
+        const enButton = document.getElementById("english-button");
+
+        const jaButton = document.getElementById("japanese-button");
+
+        enButton.classList.toggle("outline", language !== "en");
+
+        jaButton.classList.toggle("outline", language !== "ja");
+
+        enButton.setAttribute("aria-pressed", language === "en");
+
+        jaButton.setAttribute("aria-pressed", language === "ja");
+
+        document.getElementById("response").innerHTML = "";
+
+        updateSortButtons();
+
+        renderQuestions();
+      }
+
+      // --------------------------------------------------
+      // Sorting
+      // --------------------------------------------------
+
+      function changeSort(sort) {
+        currentSort = sort;
+
+        updateSortButtons();
+
+        renderQuestions();
+      }
+
+      function updateSortButtons() {
+        const popularButton = document.getElementById("popular-button");
+        const newestButton = document.getElementById("newest-button");
+
+        popularButton.setAttribute("aria-pressed", currentSort === "popular");
+
+        newestButton.setAttribute("aria-pressed", currentSort === "newest");
+      }
+
+      // --------------------------------------------------
+      // Question feed
+      // --------------------------------------------------
+
+      let questionData = {
+        popular: [],
+        newest: [],
+      };
+
+      function renderQuestions() {
+        const container = document.getElementById("questions-list");
+
+        const status = document.getElementById("feed-status");
+
+        const text = translations[currentLanguage];
+
+        // Only display questions with completed translations
+        const questions = (questionData[currentSort] || []).filter(
+          (question) =>
+            question.translation_status === "completed" &&
+            question.translated_text &&
+            (currentSort !== "popular" || question.like_count > 0),
+        );
+
+        container.replaceChildren();
+
+        if (questions.length === 0) {
+          status.textContent = text.empty;
+          return;
+        }
+
+        status.textContent = "";
+
+        questions.forEach((question) => {
+          const article = document.createElement("article");
+
+          article.style.marginBottom = "1rem";
+
+          // Original question
+          const questionText = document.createElement("p");
+
+          questionText.textContent = question.original_text;
+
+          article.appendChild(questionText);
+
+          // Translation directly below original
+          const translatedText = document.createElement("p");
+
+          translatedText.textContent = question.translated_text;
+
+          translatedText.style.marginTop = "0.5rem";
+          translatedText.style.marginBottom = "1rem";
+          translatedText.style.opacity = "0.75";
+
+          article.appendChild(translatedText);
+
+          // Like button
+          const footer = document.createElement("div");
+
+          footer.style.display = "flex";
+          footer.style.alignItems = "center";
+          footer.style.justifyContent = "space-between";
+          footer.style.gap = "1rem";
+
+          const likeButton = document.createElement("button");
+
+          likeButton.type = "button";
+
+          likeButton.classList.toggle("outline", !question.liked_by_me);
+
+          likeButton.setAttribute("aria-pressed", String(question.liked_by_me));
+
+          likeButton.textContent =
+            (question.liked_by_me ? "♥ " : "♡ ") +
+            question.like_count +
+            " " +
+            text.likes;
+
+          likeButton.disabled = question.liked_by_me;
+
+          likeButton.addEventListener("click", () => {
+            likeQuestion(question.id, likeButton);
+          });
+
+          footer.appendChild(likeButton);
+
+          article.appendChild(footer);
+
+          container.appendChild(article);
+        });
+      }
+
+      // --------------------------------------------------
+      // Retrieve questions
+      // --------------------------------------------------
+
+      async function loadQuestions() {
+        const status = document.getElementById("feed-status");
+
+        try {
+          const url =
+            "/participant/questions?participant_id=" +
+            encodeURIComponent(participantId);
+
+          const response = await fetch(url, {
+            headers: {
+              Accept: "application/json",
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error("Unable to load questions");
+          }
+
+          const data = await response.json();
+
+          questionData = {
+            popular: data.popular || [],
+            newest: data.newest || [],
+          };
+
+          renderQuestions();
+        } catch (error) {
+          console.error("Question feed error:", error);
+
+          status.textContent = translations[currentLanguage].loadError;
+        }
+      }
+
+      // --------------------------------------------------
+      // Like a question
+      // --------------------------------------------------
+
+      async function likeQuestion(questionId, button) {
+        button.disabled = true;
+
+        try {
+          const response = await fetch("/like-question", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            body: JSON.stringify({
+              question_id: questionId,
+              participant_id: participantId,
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error("Unable to like question");
+          }
+
+          await loadQuestions();
+        } catch (error) {
+          console.error("Like error:", error);
+
+          button.disabled = false;
+
+          alert(
+            currentLanguage === "ja"
+              ? "いいねできませんでした。もう一度お試しください。"
+              : "Unable to like this question. Please try again.",
+          );
+        }
+      }
+
+      // --------------------------------------------------
+      // Initialize
+      // --------------------------------------------------
+
+      const browserLanguage = navigator.language || navigator.userLanguage;
+
+      const initialLanguage = browserLanguage.toLowerCase().startsWith("ja")
+        ? "ja"
+        : "en";
+
+      changeLanguage(initialLanguage);
+
+      loadQuestions();
+
+      // Refresh the question feed every 3 seconds.
+      setInterval(loadQuestions, 3000);
+    </script>
+  </body>
+</html>

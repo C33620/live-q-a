@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Start New Session — Live Q&A</title>
+
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"
+    />
+
+    <style>
+      body {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+      }
+
+      main {
+        width: 100%;
+        max-width: 420px;
+        text-align: center;
+      }
+
+      h1 {
+        margin-bottom: 0.5rem;
+      }
+
+      .description {
+        color: var(--pico-muted-color);
+        margin-bottom: 2rem;
+      }
+
+      .error {
+        color: #c0392b;
+        margin-bottom: 1rem;
+      }
+
+      button {
+        width: 100%;
+      }
+
+      .back-link {
+        display: inline-block;
+        margin-top: 1rem;
+      }
+    </style>
+  </head>
+
+  <body>
+    <main>
+      <h1>Start a new session</h1>
+
+      <p class="description">
+        Enter the presenter password to clear the previous presentation's
+        questions and likes.
+      </p>
+
+      {% if error %}
+      <p class="error" role="alert">{{ error }}</p>
+      {% endif %}
+
+      <form action="/presentation/reset" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+
+        <input
+          type="password"
+          name="password"
+          placeholder="Presenter password"
+          required
+          autocomplete="current-password"
+        />
+
+        <button type="submit">Clear previous session</button>
+      </form>
+
+      <a href="/presentation/live" class="back-link">
+        Cancel and return to questions
+      </a>
+    </main>
+  </body>
+</html>
