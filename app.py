@@ -264,10 +264,13 @@ def get_questions():
 def participant_questions():
     participant_id = request.args.get("participant_id", "").strip()
 
-    if not participant_id or len(participant_id) > 100:
-        return jsonify({
-            "error": "Invalid participant ID"
-        }), 400
+   # Validate participant ID format.
+    try:
+       participant_id = str(uuid.UUID(participant_id))
+    except (ValueError, AttributeError):
+      return jsonify({
+        "error": "Invalid participant ID"
+       }), 400
 
     try:
         questions = get_questions()
@@ -332,6 +335,15 @@ def participant_questions():
         return jsonify({
             "error": "Unable to load questions"
         }), 502
+
+    except Exception:
+        app.logger.exception(
+            "Unexpected error while retrieving participant questions"
+        )
+
+        return jsonify({
+            "error": "Something went wrong. Please try again."
+        }), 500    
 
 
 # --------------------------------------------------
