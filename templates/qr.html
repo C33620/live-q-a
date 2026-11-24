@@ -108,13 +108,56 @@
           font-size: 1rem;
         }
       }
+      .navbar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        padding: 1.25rem 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+      }
+
+      .navbar h1 {
+        font-size: 1.4rem;
+        margin: 0;
+      }
+
+      #view-questions {
+        width: auto;
+        max-width: none;
+        margin: 0;
+      }
+
+      @media (max-width: 600px) {
+        .navbar {
+          padding: 1rem;
+        }
+
+        .navbar h1 {
+          font-size: 1.15rem;
+        }
+
+        #view-questions {
+          font-size: 0.8rem;
+          padding: 0.55rem 0.75rem;
+        }
+      }
     </style>
   </head>
 
   <body>
-    <main class="welcome-container">
+    <nav class="navbar">
       <h1>Live Q&A</h1>
 
+      <a href="/presentation/live" role="button" id="view-questions">
+        View submitted questions live
+      </a>
+    </nav>
+
+    <main class="welcome-container">
       <p class="subtitle">
         Join the conversation and submit your questions.
         <br />
@@ -134,10 +177,6 @@
       <p id="qr-error" role="alert">
         Unable to generate the QR code. Please refresh the page.
       </p>
-
-      <a href="/presentation/live" role="button" id="view-questions">
-        View submitted questions
-      </a>
     </main>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -147,7 +186,6 @@
         const qrContainer = document.getElementById("qr-code");
         const qrError = document.getElementById("qr-error");
 
-        // Use the same host and port as the current presentation screen.
         const participantUrl = window.location.origin + "/join";
 
         if (typeof QRCode === "undefined") {
