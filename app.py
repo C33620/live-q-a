@@ -92,8 +92,19 @@ def supabase_headers():
         
     }
 
+ALLOWED_SUPABASE_TABLES = {
+    "questions",
+    "question_likes"
+}
+
+
+def validate_supabase_table(table):
+    if table not in ALLOWED_SUPABASE_TABLES:
+        raise ValueError("Invalid Supabase table")
+
 
 def supabase_get(table, query):
+    validate_supabase_table(table)
     url = f"{SUPABASE_URL}/rest/v1/{table}?{query}"
 
     req = Request(
@@ -107,6 +118,7 @@ def supabase_get(table, query):
 
 
 def supabase_insert(table, data, prefer="return=minimal"):
+    validate_supabase_table(table)
     url = f"{SUPABASE_URL}/rest/v1/{table}"
 
     payload = json.dumps(data).encode("utf-8")
@@ -163,6 +175,7 @@ def supabase_rpc(function_name, data=None):
 
 
 def supabase_delete(table, query):
+    validate_supabase_table(table)
     url = f"{SUPABASE_URL}/rest/v1/{table}?{query}"
 
     headers = supabase_headers()
