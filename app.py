@@ -363,6 +363,14 @@ def like_question():
             "error": "Invalid participant ID"
         }), 400
 
+    # Validate question ID format.
+    try:
+       question_id = str(uuid.UUID(question_id))
+    except ValueError:
+      return jsonify({
+        "error": "Invalid question ID"
+      }), 400    
+
     try:
         supabase_insert(
             "question_likes",
@@ -403,6 +411,15 @@ def like_question():
         return jsonify({
             "error": "Unable to like this question"
         }), 502
+
+    except Exception:
+        app.logger.exception(
+            "Unexpected error while liking question"
+        )
+
+        return jsonify({
+            "error": "Something went wrong. Please try again."
+        }), 500    
 
 
 
