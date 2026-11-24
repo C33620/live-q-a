@@ -32,6 +32,11 @@ app = Flask(__name__)
 def load_env():
     env_path = Path(__file__).parent / ".env"
 
+    # On Vercel, environment variables are provided by the platform.
+    if os.environ.get("VERCEL"):
+        return
+
+    # Locally, load environment variables from .env.
     if not env_path.exists():
         raise RuntimeError(".env file not found")
 
