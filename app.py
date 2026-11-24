@@ -250,6 +250,7 @@ def get_questions():
 # --------------------------------------------------
 
 @app.route("/participant/questions")
+@limiter.limit("60 per minute")
 def participant_questions():
     participant_id = request.args.get("participant_id", "").strip()
 
@@ -332,6 +333,7 @@ def participant_questions():
 
 
 @app.route("/like-question", methods=["POST"])
+@limiter.limit("30 per minute")
 def like_question():
     data = request.get_json(silent=True) or {}
 
@@ -521,6 +523,7 @@ def presentation_questions():
 # --------------------------------------------------
 
 @app.route("/submit-question", methods=["POST"])
+@limiter.limit("10 per minute")
 def submit_question():
 
     question = request.form.get("question", "").strip()
