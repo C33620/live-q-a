@@ -53,6 +53,7 @@ PRESENTER_PASSWORD = os.environ["PRESENTER_PASSWORD"]
 limiter = Limiter(
     get_remote_address,
     app=app,
+    storage_uri=os.environ["REDIS_URL"],
     default_limits=[]
 )
 
